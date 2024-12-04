@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config-development
+  namespace: development
+data:
+  database_host: mysql-development

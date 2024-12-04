@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wp-production
+  namespace: production
+  labels:
+    app: wordpress
+    environment: production
+spec:
+  replicas: 2  # Ensure high availability with 2 replicas
+  selector:
+    matchLabels:
+      app: wordpress
+      environment: production
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        environment: production
+    spec:
+      containers:
+        - name: wordpress
+          image: wordpress:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: "mysql-production"
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret-production
+                  key: password
+          volumeMounts:
+            - name: wp-data
+              mountPath: /var/www/html
+          resources:  # Added resource requests and limits
+            requests:
+              memory: "256Mi"
+              cpu: "500m"
+            limits:
+              memory: "512Mi"
+              cpu: "1"
+      volumes:
+        - name: wp-data
+          persistentVolumeClaim:
+            claimName: wp-pvc-production

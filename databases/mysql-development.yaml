@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc-development
+  namespace: development
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-development
+  namespace: development
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+      environment: development
+  template:
+    metadata:
+      labels:
+        app: mysql
+        environment: development
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:5.7
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret-development
+                  key: password
+            - name: MYSQL_DATABASE
+              value: wordpress
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+          resources:  # Add this block for resource requests and limits
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-pvc-development
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-development
+  namespace: development
+spec:
+  selector:
+    app: mysql
+    environment: development
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
